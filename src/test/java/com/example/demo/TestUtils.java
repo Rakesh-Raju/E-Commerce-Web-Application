@@ -18,41 +18,44 @@ public class TestUtils {
         boolean wasPrivate = false;
 
         try {
-            Field declaredField = target.getClass().getDeclaredField(fieldName);
-            if(!declaredField.isAccessible()){
-                declaredField.setAccessible(true);
+
+            Field field = target.getClass().getDeclaredField(fieldName);
+            if(!field.canAccess(target)){
+                field.setAccessible(true);
                 wasPrivate = true;
             }
 
-            declaredField.set(target, toInject);
+            field.set(target, toInject);
             if(wasPrivate){
-                declaredField.setAccessible(false);
+                field.setAccessible(false);
             }
 
-        } catch (NoSuchFieldException | IllegalAccessException e) {
+        } catch (NoSuchFieldException | IllegalAccessException | IllegalArgumentException e) {
             e.printStackTrace();
         }
 
-
     }
+
+     /*
+        Reusable calls
+     */
 
     public static User createUser() {
         User user = new User();
-        user.setId(1L);
+        user.setId(0L);
         user.setUsername("test");
-        user.setPassword("testpassword");
+        user.setPassword("password");
         user.setCart(createCart(user));
-
         return user;
     }
 
     public static Cart createCart(User user) {
         Cart cart = new Cart();
         cart.setId(1L);
-        List<Item> items = createItems();
-        cart.setItems(createItems());
-        cart.setTotal(items.stream().map(item -> item.getPrice()).reduce(BigDecimal::add).get());
         cart.setUser(user);
+
+        cart.setItems(createItems());
+        cart.setTotal(cart.getItems().stream().map(item -> item.getPrice()).reduce(BigDecimal::add).get());
 
         return cart;
     }
@@ -71,29 +74,23 @@ public class TestUtils {
     public static Item createItem(long id){
         Item item = new Item();
         item.setId(id);
-
-        item.setPrice(BigDecimal.valueOf(id * 1.2));
-
-        item.setName("Item " + item.getId());
-
-        item.setDescription("Description ");
+        item.setPrice(BigDecimal.valueOf(2.99));
+        item.setName("Item: " + item.getId());
+        item.setDescription("Description: [default] ");
         return item;
     }
 
     public static List<UserOrder> createOrders(){
         List<UserOrder> orders = new ArrayList<>();
-
-        IntStream.range(0,2).forEach(i -> {
-            UserOrder order = new UserOrder();
-            Cart cart = createCart(createUser());
-
-            order.setItems(cart.getItems());
-            order.setTotal(cart.getTotal());
-            order.setUser(createUser());
-            order.setId(Long.valueOf(i));
-
-            orders.add(order);
-        });
+            for(int i = 0; i < 3; i++) {
+                UserOrder order = new UserOrder();
+                Cart cart = createCart(createUser());
+                order.setItems(cart.getItems());
+                order.setTotal(cart.getTotal());
+                order.setUser(createUser());
+                order.setId(Long.valueOf(i));
+                orders.add(order);
+            }
         return orders;
     }
 

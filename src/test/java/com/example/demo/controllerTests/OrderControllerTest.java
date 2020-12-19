@@ -1,5 +1,6 @@
 package com.example.demo.controllerTests;
 
+import com.example.demo.TestUtils;
 import com.example.demo.controllers.OrderController;
 import com.example.demo.model.persistence.User;
 import com.example.demo.model.persistence.UserOrder;
@@ -9,8 +10,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.http.ResponseEntity;
 
@@ -24,54 +23,56 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class OrderControllerTest {
 
-    @InjectMocks
     private OrderController orderController;
-
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private OrderRepository orderRepository;
+    private UserRepository userRepository = mock(UserRepository.class);
+    private OrderRepository orderRepository = mock(OrderRepository.class);
 
     @Before
-    public void setup(){
+    public void setup() {
+        orderController = new OrderController();
         User user = createUser();
+
+        TestUtils.injectObjects(orderController, "userRepository", userRepository);
+        TestUtils.injectObjects(orderController, "orderRepository", orderRepository);
+
         when(userRepository.findByUsername("test")).thenReturn(user);
         when(orderRepository.findByUser(any())).thenReturn(createOrders());
     }
 
     @Test
-    public void testSubmitOrder(){
-
+    public void testSubmitOrder() {
         ResponseEntity<UserOrder> response = orderController.submit("test");
         Assertions.assertNotNull(response);
         Assertions.assertEquals(200, response.getStatusCodeValue());
         UserOrder order = response.getBody();
         Assertions.assertEquals(createItems(), order.getItems());
         Assertions.assertEquals(createUser().getId(), order.getUser().getId());
-        verify(orderRepository, times(1)).save(order);
-
     }
 
     @Test
-    public void testInvalidOrder(){
-
-        ResponseEntity<UserOrder> response = orderController.submit("bad name");
-        Assertions.assertNotNull(response);
-        Assertions.assertEquals(404, response.getStatusCodeValue());
-        Assertions.assertNull( response.getBody());
-        verify(userRepository, times(1)).findByUsername("bad name");
-    }
-
-    @Test
-    public void testGetOrdersForUser(){
-
+    public void testGetOrdersForUser() {
         ResponseEntity<List<UserOrder>> response = orderController.getOrdersForUser("test");
         Assertions.assertNotNull(response);
         Assertions.assertEquals(200, response.getStatusCodeValue());
         List<UserOrder> orders = response.getBody();
         Assertions.assertEquals(createOrders().size(), orders.size());
-
     }
+
+    @Test
+    public void testSubmitOrderForInvalidUser(){
+        ResponseEntity<UserOrder> response = orderController.submit("invalid");
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals(404, response.getStatusCodeValue());
+        Assertions.assertNull( response.getBody());
+    }
+
+    @Test
+    public void testGetOrdersForInvalidUser() {
+        ResponseEntity<List<UserOrder>> ordersForUser = orderController.getOrdersForUser("invalid");
+        assertNotNull(ordersForUser);
+        assertEquals(404, ordersForUser.getStatusCodeValue());
+    }
+
+
 
 }
