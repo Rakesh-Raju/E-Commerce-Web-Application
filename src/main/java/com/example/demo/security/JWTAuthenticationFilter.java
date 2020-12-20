@@ -38,7 +38,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         try {
             User creds = new ObjectMapper().readValue(req.getInputStream(), User.class);
 
-            log.info("Authenticating user: " + creds.getUsername());
+            log.info("[AUTH] Authenticating user: " + creds.getUsername());
 
             return authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -47,7 +47,7 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                             new ArrayList<>())
             );
         } catch (IOException e) {
-            log.error("Authentication failed with reason: ", e.getMessage());
+            log.error("[EXCEPTION] Authentication failed with reason: ", e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -63,6 +63,8 @@ public class JWTAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 .withExpiresAt(new Date(System.currentTimeMillis() + SecurityConstants.EXPIRATION_TIME))
                 .sign(HMAC512(SecurityConstants.SECRET.getBytes()));
         res.addHeader(SecurityConstants.HEADER_STRING, SecurityConstants.TOKEN_PREFIX + token);
-        log.info("Successfully authenticated user: " + username);
+        log.info("[AUTH] Successfully authenticated user: " + username);
     }
+
+
 }
