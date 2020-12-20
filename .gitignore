@@ -2,4 +2,4 @@
 /auth-course.iml
 /target/
 /.mvn/
-/.logs/
+/logs/
